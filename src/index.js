@@ -4,10 +4,13 @@ import {
 import { rules } from './rules';
 
 const ELEMENT_DEEP_SIZE = 10;
+const WRAPPER_CLASS = 'validation-wrapper';
+const ERROR_MESSAGE_CLASS = 'validation-error-message';
+const ERROR_CLASS = 'validation-error';
 
 /**
  * @props :
- *   @el: Element of react component, case ReactDOM.findDOMNode will be deprecated in future
+ *   @el: Element of react component, case ReactDOM.findDOMNode will be deprecated in future. By default it will be validationNode in component
  *   @scope: ReactComponent  important if you use createErrorElement
  *   @fields: {
  *       [field-name] : {
@@ -35,15 +38,18 @@ export class Validate {
   constructor(props = {}) {
     this.fields = props.fields || {};
     this.scope = props.scope;
-    this.$el = props.element;
+    this.$el = this.scope.validationNode || props.element;
     this.createErrorElement = props.createErrorElement || null;
     this.rules = {
       ...rules,
       ...props.rules,
     };
     if (this.createErrorElement) {
-      if (!this.fields || !this.createErrorElement.wrapperClass) {
-        throw TypeError('fields and wrapperClass important to use createErrorElement');
+      if (!this.createErrorElement.wrapperClass) this.createErrorElement.wrapperClass = WRAPPER_CLASS;
+      if (!this.createErrorElement.errorClass) this.createErrorElement.errorClass = ERROR_CLASS;
+      if (!this.createErrorElement.errorMessageClass) this.createErrorElement.errorMessageClass = ERROR_MESSAGE_CLASS;
+      if (!this.fields) {
+        throw TypeError('fields important to use createErrorElement');
       } else {
         this.validateFieldStore = new Map();
       }
