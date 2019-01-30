@@ -36,9 +36,7 @@
     "eslint-plugin-jsx-a11y": "^6.2.0",
     "eslint-plugin-react": "^7.12.4",
     "jest": "^19.0.1",
-    "react-addons-test-utils": "^15.4.2"
-  },
-  "dependencies": {
+    "react-addons-test-utils": "^15.4.2",
     "rimraf": "^2.6.0"
   }
 }

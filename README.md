@@ -72,14 +72,6 @@ export class Form extends Component {
 ```
 
 
-# Tasks
-
-Add socket.io support
-
-Add migrations
-
-Add logging
-
 # License
 
 MIT.
