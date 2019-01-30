@@ -145,6 +145,8 @@ Add more validation rules and do them more expandable
 
 Add JsDoc
 
+Add Api info
+
 # License
 
 MIT.
