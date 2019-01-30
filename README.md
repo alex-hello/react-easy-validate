@@ -2,7 +2,7 @@
 
 
 
-Another validation on React which I actively use 
+Another validation on React which I use actively 
 
 
 ## Get started
