@@ -2,7 +2,7 @@
 
 
 
-Еще одна валидация на React которой я активно пользуюсь
+Another validation on React which I actively use 
 
 
 ## Get started
