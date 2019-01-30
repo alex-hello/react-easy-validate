@@ -29,7 +29,7 @@ const ERROR_CLASS = 'validation-error';
  *      errorMessageClass: String // className of element with message of error,
  *      errorClass: String // className that add to wrapper
  *      findAllByDom: Object with settings for find elements by querySelector
- *      findAllByRefs: Object with settings for find elements by Ref
+ *      findAllByRefs: Object or Boolean with settings for find elements by Ref
  *      cacheAllByDom: Boolean // will you cache element's that be found in component's dom
  *   },
  *   @rules: custom array of rules
@@ -38,22 +38,19 @@ export class Validate {
   constructor(props = {}) {
     this.fields = props.fields || {};
     this.scope = props.scope;
-    this.$el = this.scope.validationNode || props.element;
-    this.createErrorElement = props.createErrorElement || null;
+    this.$el = props.scope.validationNode || props.element;
+    this.createErrorElement = props.createErrorElement || {};
     this.rules = {
       ...rules,
       ...props.rules,
     };
-    if (this.createErrorElement) {
-      if (!this.createErrorElement.wrapperClass) this.createErrorElement.wrapperClass = WRAPPER_CLASS;
-      if (!this.createErrorElement.errorClass) this.createErrorElement.errorClass = ERROR_CLASS;
-      if (!this.createErrorElement.errorMessageClass) this.createErrorElement.errorMessageClass = ERROR_MESSAGE_CLASS;
-      if (!this.fields) {
-        throw TypeError('fields important to use createErrorElement');
-      } else {
-        this.validateFieldStore = new Map();
-      }
+    if (!this.createErrorElement.wrapperClass) this.createErrorElement.wrapperClass = WRAPPER_CLASS;
+    if (!this.createErrorElement.errorClass) this.createErrorElement.errorClass = ERROR_CLASS;
+    if (!this.createErrorElement.errorMessageClass) this.createErrorElement.errorMessageClass = ERROR_MESSAGE_CLASS;
+    if (!this.fields) {
+      throw TypeError('fields important to use createErrorElement');
     }
+    this.validateFieldStore = new Map();
   }
 
   /**
@@ -65,7 +62,10 @@ export class Validate {
   validateField(element, validation = this.fields[element.name].rules) {
     const value = element.value;
     let invalid = false;
-    const saved = this.validateFieldStore.get(element); let messageEl; let firstError; let
+    const saved = this.validateFieldStore.get(element);
+    let messageEl;
+    let firstError;
+    let
       wrapper;
     if (saved) {
       wrapper = saved.wrapper;
@@ -81,7 +81,7 @@ export class Validate {
           wrapper = saved.wrapper;
           messageEl = toggleMessageElement(firstError, this.createErrorElement.errorMessageClass, saved.messageEl);
         } else {
-          wrapper = this.findWrapper(element);
+          wrapper = findWrapper.call(this, element);
           messageEl = toggleMessageElement(firstError, this.createErrorElement.errorMessageClass);
         }
         this.validateFieldStore.set(element, {
@@ -117,96 +117,93 @@ export class Validate {
     if (this.createErrorElement) {
       const cmpEl = this.$el;
       if (fields) {
-        return fields.map(key => this.validateAllWithCreatingErrorEl(key, cmpEl)).some(el => el === true);
+        return fields.map(key => validateAllWithCreatingErrorEl.call(this, key, cmpEl)).some(el => el === true);
       }
       return Object.keys(this.fields)
-        .map(key => this.validateAllWithCreatingErrorEl(key, cmpEl))
+        .map(key => validateAllWithCreatingErrorEl.call(this, key, cmpEl))
         .some(el => el === true);
     }
     return this.validateAllSimple(fields);
   }
 
-  /**
-     * Scenarios wrapper
-     */
-
-  validateAllWithCreatingErrorEl(key, cmpEl) {
-    if (this.createErrorElement.findAllByRefs) {
-      return this.validateAllRefScenario(key);
-    }
-    if (!cmpEl) throw TypeError('Component\'s el doesn\'t exist');
-    return this.validateAllDomScenario(key, cmpEl);
-  }
-
-  /**
-     * Find in Component's Dom element for validate and show error
-     *
-     * It can use callback in field.domSelector if you want to add custom selector for current validation field
-     * It can use callback in findAllByDom.domSelector if you want to add custom selector for current component
-     * By default selector search input with name = validation field name
-     * */
-
-  validateAllDomScenario(key, cmpEl) {
-    let invalid = false;
-    const field = this.fields[key];
-    let node;
-    if (field.domSelector) {
-      node = field.domSelector(key, this.scope);
-    } else if (this.scope.findAllByDom && this.scope.findAllByDom.domSelector) {
-      node = this.scope.findAllByDom.domSelector(this.scope, key);
-    } else {
-      node = cmpEl.querySelector(`input[name=${key}]`);
-    }
-    if (!node) throw TypeError(`Node in field '${key}' not found`);
-    const result = this.validateField(node);
-    if (result) invalid = true;
-    return invalid;
-  }
-
-  /**
-     * Find element by ref
-     *
-     * It can use callback in field.refSelector if you want to add custom selector for current validation field
-     * ref name will specify in field.ref, by default it will ${key}Ref
-     * */
-
-  validateAllRefScenario(key) {
-    let invalid = false;
-    const field = this.fields[key];
-    const ref = this.scope.refs[field.ref || `${key}Ref`];
-    if (ref) {
-      const node = field.refSelector ? field.refSelector.call(this.scope, ref) : ref;
-      if (!node) throw TypeError(`Node in field '${key}' not found`);
-      const result = this.validateField(node);
-      if (result) invalid = result;
-    } else {
-      throw TypeError(`Field '${key}' ref doesn't exist`);
-    }
-    return invalid;
-  }
-
   validateAllSimple() {
     console.log(this);
   }
+}
 
-  /**
-     * Find wrapper of current element for adding error class and validation error message
-     * */
-  findWrapper(element) {
-    let toggleElement = element.classList.contains(this.createErrorElement.wrapperClass) ? element : null;
-    let deepCounter = ELEMENT_DEEP_SIZE;
-    while (!toggleElement && deepCounter > 0) {
-      element = element.parentNode;
-      if (element.classList.contains(this.createErrorElement.wrapperClass)) {
-        toggleElement = element;
-        break;
-      }
-      --deepCounter;
-    }
-    if (!toggleElement) {
-      console.warn('Element for adding error not found');
-      return false;
-    }
-    return element;
+/**
+ * Scenarios wrapper
+ */
+function validateAllWithCreatingErrorEl(key, cmpEl) {
+  if (this.createErrorElement.findAllByRefs) {
+    return validateAllRefScenario.call(this, key);
   }
+  if (!cmpEl) throw TypeError('Component\'s el doesn\'t exist');
+  return validateAllDomScenario.call(this, key, cmpEl);
+}
+
+/**
+ * Find in Component's Dom element for validate and show error
+ *
+ * It can use callback in field.domSelector if you want to add custom selector for current validation field
+ * It can use callback in findAllByDom.domSelector if you want to add custom selector for current component
+ * By default selector search input with name = validation field name
+ * */
+function validateAllDomScenario(key, cmpEl) {
+  let invalid = false;
+  const field = this.fields[key];
+  let node;
+  if (field.domSelector) {
+    node = field.domSelector(key, this.scope);
+  } else if (this.scope.findAllByDom && this.scope.findAllByDom.domSelector) {
+    node = this.scope.findAllByDom.domSelector(this.scope, key);
+  } else {
+    node = cmpEl.querySelector(`input[name=${key}]`);
+  }
+  if (!node) throw TypeError(`Node in field '${key}' not found`);
+  const result = this.validateField(node);
+  if (result) invalid = true;
+  return invalid;
+}
+
+/**
+ * Find element by ref
+ *
+ * It can use callback in field.refSelector if you want to add custom selector for current validation field
+ * ref name will specify in field.ref, by default it will ${key}Ref
+ * */
+function validateAllRefScenario(key) {
+  let invalid = false;
+  const field = this.fields[key];
+  const ref = this.scope.refs[field.ref || `${key}Ref`];
+  if (ref) {
+    const node = field.refSelector ? field.refSelector.call(this.scope, ref) : ref;
+    if (!node) throw TypeError(`Node in field '${key}' not found`);
+    const result = this.validateField(node);
+    if (result) invalid = result;
+  } else {
+    throw TypeError(`Field '${key}' ref doesn't exist`);
+  }
+  return invalid;
+}
+
+/**
+ * Find wrapper of current element for adding error class and validation error message
+ * */
+function findWrapper(element) {
+  let toggleElement = element.classList.contains(this.createErrorElement.wrapperClass) ? element : null;
+  let deepCounter = ELEMENT_DEEP_SIZE;
+  while (!toggleElement && deepCounter > 0) {
+    element = element.parentNode;
+    if (element.classList.contains(this.createErrorElement.wrapperClass)) {
+      toggleElement = element;
+      break;
+    }
+    --deepCounter;
+  }
+  if (!toggleElement) {
+    console.warn('Element for adding error not found');
+    return false;
+  }
+  return element;
 }
