@@ -4,7 +4,7 @@ import {
 import { rules } from './rules';
 
 const ELEMENT_DEEP_SIZE = 10;
-const WRAPPER_CLASS = 'validation-wrapper';
+const WRAPPER_CLASS = 'form-group';
 const ERROR_MESSAGE_CLASS = 'validation-error-message';
 const ERROR_CLASS = 'validation-error';
 
@@ -115,7 +115,7 @@ export class Validate {
      */
   validateAll(fields) {
     if (this.createErrorElement) {
-      const cmpEl = this.$el;
+      const cmpEl = this.$el || this.scope.validationNode;
       if (fields) {
         return fields.map(key => validateAllWithCreatingErrorEl.call(this, key, cmpEl)).some(el => el === true);
       }
@@ -126,9 +126,79 @@ export class Validate {
     return this.validateAllSimple(fields);
   }
 
-  validateAllSimple() {
-    console.log(this);
+  /**
+     * @validateField: field in validation object with rules and etc
+     * @stateField: optional param for search in state current property, for example fields.auth.login
+     * */
+  check(validateField, passedRules) {
+    const fieldObj = findFieldIn(validateField, this.fields);
+    const scopedField = findFieldIn(fieldObj.field || validateField, this.scope.state);
+    if (fieldObj.invalid === undefined) initValidationObj(fieldObj);
+    const validationRules = passedRules || this.fields[validateField].rules;
+    let invalid = false; let
+      firstError;
+    if (!validationRules) throw TypeError('Validation rules doesn\'t exist in params and fields');
+    const rulesArr = parseRules(validationRules);
+    for (const rule of rulesArr) {
+      const result = callRule(rule, scopedField);
+      if (!result || typeof result === 'string') {
+        invalid = true;
+        firstError = getInvalidMessage.call(this, result || fieldObj.message, rule);
+        break;
+      }
+    }
+    fieldObj.invalid = invalid;
+    return (firstError && fieldObj.showError) ? firstError : '';
   }
+
+  isInvalid(field) {
+    return this.fields[field].invalid && this.fields[field].showError;
+  }
+
+  validateFields(fields) {
+    let hasError = false;
+    (fields || Object.keys(this.fields)).forEach((validateField) => {
+      const fieldObj = this.fields[validateField];
+      const scopedField = this.scope.state[validateField];
+      let invalid = false;
+      if (fieldObj.invalid === undefined) initValidationObj(fieldObj);
+      const rulesArr = parseRules(fieldObj.rules);
+      for (const rule of rulesArr) {
+        const result = callRule(rule, scopedField);
+        if (!result || typeof result === 'string') {
+          invalid = true;
+          hasError = invalid;
+          fieldObj.invalid = invalid;
+          fieldObj.showError = true;
+          break;
+        }
+      }
+    });
+    this.scope.forceUpdate();
+    return hasError;
+  }
+}
+
+function findFieldIn(field, where) {
+  const parsedField = field.split('.');
+  if (parsedField.length > 1) {
+    return findDeepField(parsedField, where);
+  }
+  return where[field];
+}
+
+function initValidationObj(obj) {
+  obj.invalid = false;
+  obj.showError = false;
+}
+function findDeepField(field, where) {
+  let find = where;
+  while (field.length) {
+    find = find[field[0]];
+    if (find === undefined) throw TypeError('Passed fields doesn\'t exist in state');
+    field.splice(0, 1);
+  }
+  return find;
 }
 
 /**

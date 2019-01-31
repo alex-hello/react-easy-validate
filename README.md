@@ -134,10 +134,69 @@ export class Form extends Component {
 	}
 }
 ```
+#With curved braces
+1. Create new instance of Validation class in your component with fields and scope props
+2. Add call of check for each field that need to validate ('pass the name of validation prop')
+
+```jsx harmony
+import {Validate} from 'react-easy-validate';
+
+export class Form extends Component {
+	constructor() {
+	    super();
+	    this.validator = new Validate({
+	                fields: {
+                        email: {
+                            rules: 'required,email',
+                        },
+                        password: {
+                            rules: ['required', val => val.length > 5 ? true : 'Password is incorrect'],
+                        },
+                    },
+                    scope: this
+	    })
+	}
+	changeHandler = ({target}) => {
+	    this.setState({
+	    	[target.name]: target.value
+	    })
+	};
+    submitForm = (e) => {
+        if( this.validator.validateFields() ) {
+                    // ... send form
+        }
+        e.preventDefault();
+    };
+
+	render() {
+		return (
+			<form onSubmit={this.submitForm}>
+				<div className='form-control validation-wrapper'>
+					<input name="email"
+						   placeholder='email'
+						   onChange={this.changeHandler}
+						   />
+					{this.validator.check('email')}
+				</div>
+				<div className='form-control validation-wrapper'>
+					<input name="password"
+						   placeholder='password'
+						   onChange={this.changeHandler}
+						   />
+					{this.validator.check('password')}
+				</div>
+				<button
+					type="submit">
+					Sign in
+				</button>
+			</form>
+		)
+	}
+}
+```
+
 
 #TODO
-
-To add last validation method
 
 Refactor code
 

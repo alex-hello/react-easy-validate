@@ -11,6 +11,7 @@ exports.toggleInvalidClass = toggleInvalidClass;
 exports.isBlank = isBlank;
 exports.testRegex = testRegex;
 exports.numeric = numeric;
+exports.size = size;
 
 var _rules = require('./rules');
 
@@ -89,4 +90,14 @@ function testRegex(value, regex) {
 
 function numeric(val) {
   return this.testRegex(val, /^(\d+.?\d*)?$/);
+}
+
+function size(val, type) {
+  // if an array or string get the length, else return the value.
+  if (type === 'string' || type === undefined || type === 'array') {
+    return val.length;
+  }if (type === 'num') {
+    return parseFloat(val);
+  }
+  return false;
 }

@@ -1,5 +1,5 @@
 import {
-  isBlank, numeric, testRegex,
+  isBlank, numeric, size, testRegex,
 } from './helpers';
 
 export const rules = {
@@ -32,13 +32,18 @@ export const rules = {
     message: 'Field must be an array.',
     rule: val => Array.isArray(val),
   },
+  between: {
+    message: 'Field must be between values',
+    rule: (val, params) => size(val, params[2]) >= parseFloat(params[0]) && size(val, params[2]) <= parseFloat(params[1]),
+  },
   boolean: {
     message: 'Field must be a boolean.',
     rule: val => val === false || val === true,
   },
   email: {
     message: 'Field must be a valid email address.',
-    rule: val => testRegex(val, /^[A-Z0-9.!#$%&'*+-/=?^`{|}~]+@[A-Z0-9.-]+.[A-Z]{2,}$/i),
+    // eslint-disable-next-line
+    rule: val => testRegex(val, /^\w+([(\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{1,10})+$/i),
   },
   numeric: {
     message: 'Field must be a number.',
@@ -48,11 +53,10 @@ export const rules = {
     message: 'Field is required.',
     rule: val => !isBlank(val),
   },
-  url: {
-    message: 'Field must be a url.',
-    // eslint-disable-next-line
-    rule: val => testRegex(val, /^(https?|ftp):\/\/(-\.)?([^\s/?\.#-]+\.?)+(\/[^\s]*)?$/i),
-  },
+  // url: {
+  //   message: 'Field must be a url.',
+  //   rule: val => testRegex(val, /^(https?|ftp):\/\/(-\.)?([^\s/?\.#-]+\.?)+(\/[^\s]*)?$/i),
+  // },
   default: {
     message: 'Field is invalid',
   },

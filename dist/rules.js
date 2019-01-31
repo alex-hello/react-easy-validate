@@ -53,6 +53,12 @@ var rules = exports.rules = {
       return Array.isArray(val);
     }
   },
+  between: {
+    message: 'Field must be between values',
+    rule: function rule(val, params) {
+      return (0, _helpers.size)(val, params[2]) >= parseFloat(params[0]) && (0, _helpers.size)(val, params[2]) <= parseFloat(params[1]);
+    }
+  },
   boolean: {
     message: 'Field must be a boolean.',
     rule: function rule(val) {
@@ -61,8 +67,9 @@ var rules = exports.rules = {
   },
   email: {
     message: 'Field must be a valid email address.',
+    // eslint-disable-next-line
     rule: function rule(val) {
-      return (0, _helpers.testRegex)(val, /^[A-Z0-9.!#$%&'*+-/=?^`{|}~]+@[A-Z0-9.-]+.[A-Z]{2,}$/i);
+      return (0, _helpers.testRegex)(val, /^\w+([(\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{1,10})+$/i);
     }
   },
   numeric: {
@@ -77,13 +84,10 @@ var rules = exports.rules = {
       return !(0, _helpers.isBlank)(val);
     }
   },
-  url: {
-    message: 'Field must be a url.',
-    // eslint-disable-next-line
-    rule: function rule(val) {
-      return (0, _helpers.testRegex)(val, /^(https?|ftp):\/\/(-\.)?([^\s/?\.#-]+\.?)+(\/[^\s]*)?$/i);
-    }
-  },
+  // url: {
+  //   message: 'Field must be a url.',
+  //   rule: val => testRegex(val, /^(https?|ftp):\/\/(-\.)?([^\s/?\.#-]+\.?)+(\/[^\s]*)?$/i),
+  // },
   default: {
     message: 'Field is invalid'
   }

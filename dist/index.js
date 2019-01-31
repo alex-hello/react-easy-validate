@@ -16,7 +16,7 @@ var _rules = require('./rules');
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var ELEMENT_DEEP_SIZE = 10;
-var WRAPPER_CLASS = 'validation-wrapper';
+var WRAPPER_CLASS = 'form-group';
 var ERROR_MESSAGE_CLASS = 'validation-error-message';
 var ERROR_CLASS = 'validation-error';
 
@@ -159,7 +159,7 @@ var Validate = exports.Validate = function () {
       var _this = this;
 
       if (this.createErrorElement) {
-        var cmpEl = this.$el;
+        var cmpEl = this.$el || this.scope.validationNode;
         if (fields) {
           return fields.map(function (key) {
             return validateAllWithCreatingErrorEl.call(_this, key, cmpEl);
@@ -175,21 +175,137 @@ var Validate = exports.Validate = function () {
       }
       return this.validateAllSimple(fields);
     }
+
+    /**
+       * @validateField: field in validation object with rules and etc
+       * @stateField: optional param for search in state current property, for example fields.auth.login
+       * */
+
   }, {
-    key: 'validateAllSimple',
-    value: function validateAllSimple() {
-      console.log(this);
+    key: 'check',
+    value: function check(validateField, passedRules) {
+      var fieldObj = findFieldIn(validateField, this.fields);
+      var scopedField = findFieldIn(fieldObj.field || validateField, this.scope.state);
+      if (fieldObj.invalid === undefined) initValidationObj(fieldObj);
+      var validationRules = passedRules || this.fields[validateField].rules;
+      var invalid = false;var firstError = void 0;
+      if (!validationRules) throw TypeError('Validation rules doesn\'t exist in params and fields');
+      var rulesArr = (0, _helpers.parseRules)(validationRules);
+      var _iteratorNormalCompletion2 = true;
+      var _didIteratorError2 = false;
+      var _iteratorError2 = undefined;
+
+      try {
+        for (var _iterator2 = rulesArr[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+          var rule = _step2.value;
+
+          var result = (0, _helpers.callRule)(rule, scopedField);
+          if (!result || typeof result === 'string') {
+            invalid = true;
+            firstError = _helpers.getInvalidMessage.call(this, result || fieldObj.message, rule);
+            break;
+          }
+        }
+      } catch (err) {
+        _didIteratorError2 = true;
+        _iteratorError2 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion2 && _iterator2.return) {
+            _iterator2.return();
+          }
+        } finally {
+          if (_didIteratorError2) {
+            throw _iteratorError2;
+          }
+        }
+      }
+
+      fieldObj.invalid = invalid;
+      return firstError && fieldObj.showError ? firstError : '';
+    }
+  }, {
+    key: 'isInvalid',
+    value: function isInvalid(field) {
+      return this.fields[field].invalid && this.fields[field].showError;
+    }
+  }, {
+    key: 'validateFields',
+    value: function validateFields(fields) {
+      var _this2 = this;
+
+      var hasError = false;
+      (fields || Object.keys(this.fields)).forEach(function (validateField) {
+        var fieldObj = _this2.fields[validateField];
+        var scopedField = _this2.scope.state[validateField];
+        var invalid = false;
+        if (fieldObj.invalid === undefined) initValidationObj(fieldObj);
+        var rulesArr = (0, _helpers.parseRules)(fieldObj.rules);
+        var _iteratorNormalCompletion3 = true;
+        var _didIteratorError3 = false;
+        var _iteratorError3 = undefined;
+
+        try {
+          for (var _iterator3 = rulesArr[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+            var rule = _step3.value;
+
+            var result = (0, _helpers.callRule)(rule, scopedField);
+            if (!result || typeof result === 'string') {
+              invalid = true;
+              hasError = invalid;
+              fieldObj.invalid = invalid;
+              fieldObj.showError = true;
+              break;
+            }
+          }
+        } catch (err) {
+          _didIteratorError3 = true;
+          _iteratorError3 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion3 && _iterator3.return) {
+              _iterator3.return();
+            }
+          } finally {
+            if (_didIteratorError3) {
+              throw _iteratorError3;
+            }
+          }
+        }
+      });
+      this.scope.forceUpdate();
+      return hasError;
     }
   }]);
 
   return Validate;
 }();
 
+function findFieldIn(field, where) {
+  var parsedField = field.split('.');
+  if (parsedField.length > 1) {
+    return findDeepField(parsedField, where);
+  }
+  return where[field];
+}
+
+function initValidationObj(obj) {
+  obj.invalid = false;
+  obj.showError = false;
+}
+function findDeepField(field, where) {
+  var find = where;
+  while (field.length) {
+    find = find[field[0]];
+    if (find === undefined) throw TypeError('Passed fields doesn\'t exist in state');
+    field.splice(0, 1);
+  }
+  return find;
+}
+
 /**
  * Scenarios wrapper
  */
-
-
 function validateAllWithCreatingErrorEl(key, cmpEl) {
   if (this.createErrorElement.findAllByRefs) {
     return validateAllRefScenario.call(this, key);
