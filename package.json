@@ -1,6 +1,6 @@
 {
   "name": "react-easy-validate",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Simple validator for React forms.",
   "main": "dist/index.js",
   "scripts": {
