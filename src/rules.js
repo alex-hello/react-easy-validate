@@ -43,7 +43,7 @@ export const rules = {
   email: {
     message: 'Field must be a valid email address.',
     // eslint-disable-next-line
-    rule: val => testRegex(val, /^\w+([(\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{1,10})+$/i),
+        rule: val => testRegex(val, /^\w+([(\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{1,10})+$/i),
   },
   numeric: {
     message: 'Field must be a number.',

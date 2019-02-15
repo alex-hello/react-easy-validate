@@ -61,46 +61,57 @@ export class Validate {
 
   validateField(element, validation = this.fields[element.name].rules) {
     const value = element.value;
-    let invalid = false;
     const saved = this.validateFieldStore.get(element);
+    let invalid = false;
+
+
     let messageEl;
+
+
     let firstError;
-    let
-      wrapper;
-    if (saved) {
-      wrapper = saved.wrapper;
-      messageEl = saved.messageEl;
-    }
-    const inputRulesArr = parseRules(validation);
-    for (const rule of inputRulesArr) {
-      const result = callRule(rule, value);
-      if (!result || typeof result === 'string') {
-        invalid = true;
-        firstError = getInvalidMessage.call(this, result || validation.message, rule);
-        if (saved) {
-          wrapper = saved.wrapper;
-          messageEl = toggleMessageElement(firstError, this.createErrorElement.errorMessageClass, saved.messageEl);
-        } else {
-          wrapper = findWrapper.call(this, element);
-          messageEl = toggleMessageElement(firstError, this.createErrorElement.errorMessageClass);
-        }
-        this.validateFieldStore.set(element, {
-          firstError,
-          messageEl,
-          wrapper,
-          rule,
-        });
-        if (!wrapper.contains(messageEl)) {
-          wrapper.appendChild(messageEl);
-        }
-        break;
+
+
+    let wrapper;
+    if (this.createErrorElement) {
+      if (saved) {
+        wrapper = saved.wrapper;
+        messageEl = saved.messageEl;
       }
-    }
-    if (wrapper) {
-      toggleInvalidClass(wrapper, invalid);
-    }
-    if (!invalid && wrapper && wrapper.contains(messageEl)) {
-      wrapper.removeChild(messageEl);
+      const inputRulesArr = parseRules(validation);
+      for (const rule of inputRulesArr) {
+        const result = callRule(rule, value);
+        if (!result || typeof result === 'string') {
+          invalid = true;
+          firstError = getInvalidMessage.call(this, result || validation.message, rule);
+          if (saved) {
+            wrapper = saved.wrapper;
+            messageEl = toggleMessageElement(firstError, this.createErrorElement.errorMessageClass, saved.messageEl);
+          } else {
+            wrapper = findWrapper.call(this, element);
+            messageEl = toggleMessageElement(firstError, this.createErrorElement.errorMessageClass);
+          }
+          this.validateFieldStore.set(element, {
+            firstError,
+            messageEl,
+            wrapper,
+            rule,
+          });
+          if (!wrapper.contains(messageEl)) {
+            wrapper.appendChild(messageEl);
+          }
+          break;
+        }
+      }
+      if (wrapper) {
+        toggleInvalidClass(wrapper, invalid);
+      }
+      if (!invalid && wrapper && wrapper.contains(messageEl)) {
+        wrapper.removeChild(messageEl);
+      }
+    } else {
+      invalid = Boolean(this.check(element.name, true, validation, element.value));
+      findFieldIn(element.name, this.fields).showError = invalid;
+      this.scope.forceUpdate();
     }
     return invalid;
   }
@@ -130,9 +141,9 @@ export class Validate {
      * @param: {String} validateField - field that must be validate in this.fields
      * @param: {String, Function} validation - Property for passing validation settings
      * */
-  check(validateField, validation) {
+  check(validateField, showError, validation, value) {
     const fieldObj = findFieldIn(validateField, this.fields);
-    const scopedField = findFieldIn(fieldObj.field || validateField, this.scope.state);
+    const scopedField = value || findFieldIn(fieldObj.field || validateField, this.scope.state);
     if (fieldObj.invalid === undefined) initValidationObj(fieldObj);
     const validationRules = validation || this.fields[validateField].rules;
     let invalid = false;
@@ -148,7 +159,7 @@ export class Validate {
       }
     }
     fieldObj.invalid = invalid;
-    return (firstError && fieldObj.showError) ? firstError : '';
+    return (firstError && (fieldObj.showError || showError)) ? firstError : '';
   }
 
   /**

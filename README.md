@@ -46,7 +46,6 @@ After input field (or on other place) call the 'check' method of Validation with
 
 ```jsx harmony
 <input name="email"
-       ref='emailRef'
        placeholder='email'
        onChange={this.changeHandler}
 />
