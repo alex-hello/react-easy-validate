@@ -81,67 +81,76 @@ var Validate = exports.Validate = function () {
       var validation = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.fields[element.name].rules;
 
       var value = element.value;
-      var invalid = false;
       var saved = this.validateFieldStore.get(element);
+      var invalid = false;
+
       var messageEl = void 0;
+
       var firstError = void 0;
+
       var wrapper = void 0;
-      if (saved) {
-        wrapper = saved.wrapper;
-        messageEl = saved.messageEl;
-      }
-      var inputRulesArr = (0, _helpers.parseRules)(validation);
-      var _iteratorNormalCompletion = true;
-      var _didIteratorError = false;
-      var _iteratorError = undefined;
-
-      try {
-        for (var _iterator = inputRulesArr[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-          var rule = _step.value;
-
-          var result = (0, _helpers.callRule)(rule, value);
-          if (!result || typeof result === 'string') {
-            invalid = true;
-            firstError = _helpers.getInvalidMessage.call(this, result || validation.message, rule);
-            if (saved) {
-              wrapper = saved.wrapper;
-              messageEl = (0, _helpers.toggleMessageElement)(firstError, this.createErrorElement.errorMessageClass, saved.messageEl);
-            } else {
-              wrapper = findWrapper.call(this, element);
-              messageEl = (0, _helpers.toggleMessageElement)(firstError, this.createErrorElement.errorMessageClass);
-            }
-            this.validateFieldStore.set(element, {
-              firstError: firstError,
-              messageEl: messageEl,
-              wrapper: wrapper,
-              rule: rule
-            });
-            if (!wrapper.contains(messageEl)) {
-              wrapper.appendChild(messageEl);
-            }
-            break;
-          }
+      if (this.createErrorElement) {
+        if (saved) {
+          wrapper = saved.wrapper;
+          messageEl = saved.messageEl;
         }
-      } catch (err) {
-        _didIteratorError = true;
-        _iteratorError = err;
-      } finally {
+        var inputRulesArr = (0, _helpers.parseRules)(validation);
+        var _iteratorNormalCompletion = true;
+        var _didIteratorError = false;
+        var _iteratorError = undefined;
+
         try {
-          if (!_iteratorNormalCompletion && _iterator.return) {
-            _iterator.return();
+          for (var _iterator = inputRulesArr[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            var rule = _step.value;
+
+            var result = (0, _helpers.callRule)(rule, value);
+            if (!result || typeof result === 'string') {
+              invalid = true;
+              firstError = _helpers.getInvalidMessage.call(this, result || validation.message, rule);
+              if (saved) {
+                wrapper = saved.wrapper;
+                messageEl = (0, _helpers.toggleMessageElement)(firstError, this.createErrorElement.errorMessageClass, saved.messageEl);
+              } else {
+                wrapper = findWrapper.call(this, element);
+                messageEl = (0, _helpers.toggleMessageElement)(firstError, this.createErrorElement.errorMessageClass);
+              }
+              this.validateFieldStore.set(element, {
+                firstError: firstError,
+                messageEl: messageEl,
+                wrapper: wrapper,
+                rule: rule
+              });
+              if (!wrapper.contains(messageEl)) {
+                wrapper.appendChild(messageEl);
+              }
+              break;
+            }
           }
+        } catch (err) {
+          _didIteratorError = true;
+          _iteratorError = err;
         } finally {
-          if (_didIteratorError) {
-            throw _iteratorError;
+          try {
+            if (!_iteratorNormalCompletion && _iterator.return) {
+              _iterator.return();
+            }
+          } finally {
+            if (_didIteratorError) {
+              throw _iteratorError;
+            }
           }
         }
-      }
 
-      if (wrapper) {
-        (0, _helpers.toggleInvalidClass)(wrapper, invalid);
-      }
-      if (!invalid && wrapper && wrapper.contains(messageEl)) {
-        wrapper.removeChild(messageEl);
+        if (wrapper) {
+          (0, _helpers.toggleInvalidClass)(wrapper, invalid);
+        }
+        if (!invalid && wrapper && wrapper.contains(messageEl)) {
+          wrapper.removeChild(messageEl);
+        }
+      } else {
+        invalid = Boolean(this.check(element.name, true, validation, element.value));
+        findFieldIn(element.name, this.fields).showError = invalid;
+        this.scope.forceUpdate();
       }
       return invalid;
     }
@@ -185,9 +194,9 @@ var Validate = exports.Validate = function () {
 
   }, {
     key: 'check',
-    value: function check(validateField, validation) {
+    value: function check(validateField, showError, validation, value) {
       var fieldObj = findFieldIn(validateField, this.fields);
-      var scopedField = findFieldIn(fieldObj.field || validateField, this.scope.state);
+      var scopedField = value || findFieldIn(fieldObj.field || validateField, this.scope.state);
       if (fieldObj.invalid === undefined) initValidationObj(fieldObj);
       var validationRules = validation || this.fields[validateField].rules;
       var invalid = false;
@@ -225,7 +234,7 @@ var Validate = exports.Validate = function () {
       }
 
       fieldObj.invalid = invalid;
-      return firstError && fieldObj.showError ? firstError : '';
+      return firstError && (fieldObj.showError || showError) ? firstError : '';
     }
 
     /**
